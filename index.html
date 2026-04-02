@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="theme-color" content="#f39c12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>NINL Fire Safety Audit | Neelachal Ispat Nigam Ltd</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- html2pdf -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a1f2e 0%, #071523 100%);
+      color: #eef2ff;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://images.unsplash.com/photo-1582139329536-e7284fece509?w=1600&auto=format');
+      background-size: cover;
+      background-position: center 40%;
+      background-repeat: no-repeat;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 200px;
+      height: 200px;
+      background-image: url('https://cdn.pixabay.com/photo/2020/05/17/13/19/firefighter-5181552_1280.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 50%;
+      border: 3px solid #f39c12;
+      box-shadow: 0 0 25px rgba(243,156,18,0.5);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes flameFlicker {
+      0% { text-shadow: 0 0 5px #ff6600; transform: scale(1); }
+      50% { text-shadow: 0 0 15px #ff9900; transform: scale(1.05); }
+      100% { text-shadow: 0 0 5px #ff6600; transform: scale(1); }
+    }
+
+    .flame-logo {
+      animation: flameFlicker 0.8s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    .fire-particle {
+      position: fixed;
+      bottom: 0;
+      width: 3px;
+      height: 3px;
+      background: radial-gradient(circle, #ff6600, #ff3300);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: rise 6s linear infinite;
+      opacity: 0;
+      z-index: 0;
+    }
+
+    @keyframes rise {
+      0% { transform: translateY(0) scale(0); opacity: 0; }
+      15% { opacity: 0.7; }
+      85% { opacity: 0.5; }
+      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+    }
+
+    :root {
+      --orange: #f39c12;
+      --orange-dark: #e67e22;
+      --red-fire: #e74c3c;
+      --red-dark: #c0392b;
+      --green-safe: #27ae60;
+    }
+
+    .app-container {
+      display: flex;
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, rgba(5,22,31,0.97), rgba(3,16,22,0.97));
+      backdrop-filter: blur(12px);
+      padding: 1.5rem 1rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 2px solid var(--orange);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--orange);
+      padding-bottom: 1rem;
+    }
+
+    .ninl-logo {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #ff6600, #ff3300);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: bold;
+      box-shadow: 0 0 20px rgba(255, 51, 0, 0.6);
+      animation: flameFlicker 0.8s ease-in-out infinite;
+    }
+
+    .logo-text h3 {
+      font-size: 1rem;
+      color: var(--orange);
+    }
+
+    .logo-text p {
+      font-size: 9px;
+      opacity: 0.8;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      margin: 5px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, var(--orange), rgba(243,156,18,0.2));
+      border-left: 3px solid var(--orange);
+      color: var(--orange);
+    }
+
+    .nav-item:hover:not(.active) {
+      background: rgba(231,76,60,0.15);
+      border-left: 3px solid var(--red-fire);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 20px 28px;
+      overflow-x: auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, var(--orange), var(--red-fire));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .card {
+      background: rgba(17,45,66,0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(243,156,18,0.3);
+    }
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: rgba(14,42,58,0.9);
+      border-left: 4px solid var(--orange);
+      padding: 15px;
+      border-radius: 16px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, var(--orange));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .risk-badge {
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    .high-risk { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    .medium-risk { background: linear-gradient(135deg, #f1c40f, #e67e22); color: #1e2a36; }
+    .low-risk { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
+
+    .audit-section {
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--orange);
+      padding-left: 1rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--orange);
+      font-weight: 700;
+    }
+
+    .audit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.3);
+      padding: 10px 12px;
+      border-radius: 14px;
+    }
+
+    .question {
+      flex: 1.8;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .options {
+      flex: 0.8;
+      display: flex;
+      gap: 8px;
+    }
+
+    .options label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.75rem;
+    }
+
+    .dynamic-fields {
+      flex: 2.5;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 200px;
+    }
+
+    .dynamic-fields textarea {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      background: #1e2f3f;
+      border: 1px solid #2c4b64;
+      border-radius: 8px;
+      color: white;
+      resize: vertical;
+      min-height: 45px;
+    }
+
+    .risk-level {
+      width: 75px;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 3px 5px;
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    .photo-area {
+      flex: 0.9;
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .photo-buttons {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+
+    .camera-btn {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      border: none;
+      padding: 4px 8px;
+      border-radius: 16px;
+      font-size: 0.6rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .file-btn {
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      border: none;
+      padding: 4px 8px;
+      border-radius: 16px;
+      font-size: 0.6rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .photo-preview {
+      max-width: 55px;
+      max-height: 50px;
+      border-radius: 6px;
+      margin-top: 4px;
+      cursor: pointer;
+      border: 1px solid var(--orange);
+      object-fit: cover;
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      border: none;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.02);
+      background: linear-gradient(135deg, var(--red-fire), var(--red-dark));
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    input, select {
+      background: #1e2f3f;
+      border: 1px solid #2c4b64;
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: white;
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(243,156,18,0.2);
+      text-align: left;
+    }
+
+    th {
+      background: rgba(243,156,18,0.2);
+      color: var(--orange);
+    }
+
+    .search-filter {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 780px) {
+      .app-container { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .main-content { padding: 15px; }
+      .audit-row { flex-direction: column; }
+      .dynamic-fields { width: 100%; }
+    }
+
+    .heat-cell {
+      display: inline-block;
+      padding: 6px 12px;
+      margin: 4px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .red-bg { background: #e74c3c; color: white; }
+    .orange-bg { background: #f39c12; color: #1e2a36; }
+    .green-bg { background: #27ae60; color: white; }
+
+    /* Camera Modal */
+    .camera-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .camera-modal.active {
+      display: flex;
+    }
+    .camera-modal video {
+      width: 90%;
+      max-width: 500px;
+      border-radius: 20px;
+      border: 3px solid var(--orange);
+      transform: scaleX(-1);
+    }
+    .camera-modal canvas {
+      display: none;
+    }
+    .camera-controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+    .capture-btn {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      padding: 12px 30px;
+      font-size: 1rem;
+    }
+    .close-camera {
+      background: #555;
+    }
+    .camera-error {
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="fireParticles"></div>
+<div class="app-container">
+  <div class="sidebar">
+    <div class="logo-area">
+      <div class="ninl-logo flame-logo">🔥</div>
+      <div class="logo-text">
+        <h3>Neelachal Ispat Nigam Ltd</h3>
+        <p>Fire Prevention & Safety Audit</p>
+      </div>
+    </div>
+    <div class="nav-item active" data-page="dashboard"><span>📊</span> Dashboard</div>
+    <div class="nav-item" data-page="newAudit"><span>📋</span> New Audit</div>
+    <div class="nav-item" data-page="reports"><span>📑</span> Audit Reports</div>
+    <div class="nav-item" data-page="riskAnalytics"><span>⚠️</span> Risk Analytics</div>
+  </div>
+  <div class="main-content" id="mainContent"></div>
+</div>
+
+<!-- Camera Modal -->
+<div id="cameraModal" class="camera-modal">
+  <video id="cameraVideo" autoplay playsinline></video>
+  <canvas id="cameraCanvas"></canvas>
+  <div class="camera-controls">
+    <button class="capture-btn" id="capturePhotoBtn">📸 Capture Photo</button>
+    <button class="close-camera" id="closeCameraBtn">❌ Close</button>
+  </div>
+  <div id="cameraErrorMsg" class="camera-error" style="display:none;"></div>
+</div>
+
+<script>
+  // Fire particles
+  for(let i = 0; i < 45; i++) {
+    const p = document.createElement('div');
+    p.className = 'fire-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 8 + 's';
+    p.style.animationDuration = 4 + Math.random() * 5 + 's';
+    document.getElementById('fireParticles').appendChild(p);
+  }
+
+  const NINL_LOCATIONS = ["SMS (Steel Melting Shop)", "BF (Blast Furnace)", "RMHS", "Sinter Plant", "COBPP", "O2 Plant", "DRI Plant", "Coke Oven", "Rolling Mill", "Power Plant", "Water Treatment", "Central Stores", "Admin Building", "Maintenance Workshop", "Other"];
+  let audits = JSON.parse(localStorage.getItem('ninl_audits')) || [];
+
+  const sections = [
+    { name: "A. Fire Safety Appliances", questions: ["Fire Extinguisher availability", "Valid inspection tag", "Proper mounting height", "Accessibility", "Fire hydrant condition", "Hose box availability", "Hose & nozzle condition", "Water pressure adequacy"] },
+    { name: "B. Office & Building Fire Protection", questions: ["Emergency exit availability", "Exit signage illuminated", "Fire alarm system working", "Smoke detectors installed", "Emergency lighting working", "Electrical panel safety", "Housekeeping condition"] },
+    { name: "C. Transformer Fire Protection", questions: ["Fire extinguisher near transformer", "Fire bucket with sand", "Oil leakage check", "Transformer barricading", "Clear approach path", "Oil pit / soak pit available"] },
+    { name: "D. MCC Room Fire Protection", questions: ["CO2 / Clean agent extinguisher", "No combustible storage", "Cable entry sealing", "Panel labeling", "Ventilation condition", "No open wiring"] },
+    { name: "E. Cable Vault Fire Protection", questions: ["Fire detection system", "Fire resistant sealing", "Cable tray condition", "Cleanliness", "No water accumulation", "Access control maintained"] },
+    { name: "F. Conveyor Fire Protection", questions: ["Pull cord switch working", "Emergency stop functional", "Fire extinguisher nearby", "Belt alignment condition", "Coal/dust accumulation removed", "Spark detection system"] },
+    { name: "G. Storage Area Fire Protection", questions: ["Segregation of materials", "Flammable storage compliance", "Fire extinguisher available", "Stacking height maintained", "No blockage of escape routes", "Proper ventilation"] },
+    { name: "H. General Fire Safety", questions: ["Emergency assembly point", "Fire safety training", "Fire drill records", "MSDS availability", "No smoking compliance", "Safety signage", "Access road clear"] }
+  ];
+
+  function computeRisk(responses) {
+    let totalPoints = 0, maxPoints = 0;
+    for(let qid in responses) {
+      let val = responses[qid];
+      if(val === 'yes') { totalPoints += 2; maxPoints += 2; }
+      else if(val === 'no') { totalPoints += 0; maxPoints += 2; }
+      else if(val === 'na') { maxPoints += 0; }
+    }
+    let percent = maxPoints === 0 ? 100 : (totalPoints / maxPoints) * 100;
+    let riskLevel = percent >= 80 ? 'Low Risk' : (percent >= 50 ? 'Medium Risk' : 'Critical Risk');
+    let riskTag = percent >= 80 ? 'low-risk' : (percent >= 50 ? 'medium-risk' : 'high-risk');
+    return { percent: Math.round(percent), riskLevel, riskTag };
+  }
+
+  function generateAuditId() { return 'NINL-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random()*1000); }
+
+  let currentPage = 'dashboard';
+  let chartInstances = {};
+
+  // Camera handling with better error management
+  let currentStream = null;
+  let pendingCameraCallback = null;
+
+  async function openCamera(callback) {
+    pendingCameraCallback = callback;
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('cameraVideo');
+    const errorMsg = document.getElementById('cameraErrorMsg');
+    
+    // Clean up existing stream
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    
+    errorMsg.style.display = 'none';
+    
+    // Check if running on HTTPS or localhost
+    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isSecure) {
+      errorMsg.innerHTML = '⚠️ Camera requires HTTPS or localhost. Please use HTTPS or file upload option.';
+      errorMsg.style.display = 'block';
+      setTimeout(() => {
+        if (pendingCameraCallback) {
+          alert('Camera requires secure connection (HTTPS). Please use file upload option instead.');
+          pendingCameraCallback = null;
+        }
+      }, 100);
+      return;
+    }
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: { exact: 'environment' } } 
+      });
+      currentStream = stream;
+      video.srcObject = stream;
+      modal.classList.add('active');
+    } catch (err) {
+      // Try without facing mode constraint
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        currentStream = stream;
+        video.srcObject = stream;
+        modal.classList.add('active');
+      } catch (err2) {
+        errorMsg.innerHTML = '❌ Cannot access camera. Please check permissions and allow camera access. Using file upload instead.';
+        errorMsg.style.display = 'block';
+        setTimeout(() => {
+          if (pendingCameraCallback) {
+            alert('Camera access denied. Please use file upload option to add photos.');
+            pendingCameraCallback = null;
+          }
+        }, 100);
+      }
+    }
+  }
+
+  // Capture photo from camera
+  document.getElementById('capturePhotoBtn')?.addEventListener('click', () => {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    
+    if (!video.videoWidth || !video.videoHeight) {
+      alert('Camera not ready. Please wait or try again.');
+      return;
+    }
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    if (pendingCameraCallback) {
+      pendingCameraCallback(imageData);
+      pendingCameraCallback = null;
+    }
+    
+    // Close camera
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    document.getElementById('cameraModal').classList.remove('active');
+    document.getElementById('cameraVideo').srcObject = null;
+  });
+
+  document.getElementById('closeCameraBtn')?.addEventListener('click', () => {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    document.getElementById('cameraModal').classList.remove('active');
+    pendingCameraCallback = null;
+  });
+
+  function render() {
+    const container = document.getElementById('mainContent');
+    if(currentPage === 'dashboard') renderDashboard(container);
+    else if(currentPage === 'newAudit') renderAuditForm(container);
+    else if(currentPage === 'reports') renderReports(container);
+    else if(currentPage === 'riskAnalytics') renderRiskAnalytics(container);
+  }
+
+  function renderDashboard(container) {
+    let total = audits.length, high = audits.filter(a=>a.riskLevel === 'Critical Risk').length;
+    let medium = audits.filter(a=>a.riskLevel === 'Medium Risk').length, low = audits.filter(a=>a.riskLevel === 'Low Risk').length;
+    let deptRisk = {};
+    audits.forEach(a=> { if(a.department) deptRisk[a.department] = (deptRisk[a.department] || []).concat(a.riskPercent); });
+    let deptHtml = '';
+    for(let d in deptRisk) {
+      let avgRisk = deptRisk[d].reduce((s,v)=>s+v,0)/deptRisk[d].length;
+      let badge = avgRisk<50?'high-risk':(avgRisk<80?'medium-risk':'low-risk');
+      let riskText = avgRisk<50?'Critical':(avgRisk<80?'Medium':'Low');
+      deptHtml += `<tr><td><strong>${d}</strong></td><td>${Math.round(avgRisk)}%</td><td><span class="risk-badge ${badge}">${riskText}</span></td></tr>`;
+    }
+    let recentList = audits.slice(0,6).map(a=> `<tr><td><strong>${a.id}</strong></td><td>${a.department}</td><td>${a.date}</td><td>${a.riskPercent}%</td><td><span class="risk-badge ${a.riskTag}">${a.riskLevel}</span></td></tr>`).join('');
+    setTimeout(()=>{
+      let ctx1 = document.getElementById('pieChart')?.getContext('2d');
+      let ctx2 = document.getElementById('barChart')?.getContext('2d');
+      if(ctx1 && chartInstances.pie) chartInstances.pie.destroy();
+      if(ctx2 && chartInstances.bar) chartInstances.bar.destroy();
+      if(ctx1) chartInstances.pie = new Chart(ctx1, { type:'pie', data:{ labels:['Critical','Medium','Low'], datasets:[{ data:[high,medium,low], backgroundColor:['#e74c3c','#f1c40f','#27ae60'] }] } });
+      if(ctx2) chartInstances.bar = new Chart(ctx2, { type:'bar', data:{ labels:['SMS','BF','RMHS','Sinter','COBPP','O2'], datasets:[{ label:'Risk Index', data:[high*0.9, medium*0.8, low*0.6, high*0.7, medium*0.8, low*0.5], backgroundColor:'#f39c12' }] } });
+    }, 100);
+    let avgScore = total ? Math.round(audits.reduce((s,a)=>s+a.riskPercent,0)/total) : 100;
+    container.innerHTML = `
+      <div class="page-header"><h1>🔥 NINL Fire Safety Dashboard</h1><div style="background:#f39c12; padding:6px 18px; border-radius:40px;">Compliance: ${avgScore}%</div></div>
+      <div class="dashboard-stats"><div class="stat-card">📋 Total Audits<br><span class="stat-number">${total}</span></div><div class="stat-card">🔴 Critical<br><span class="stat-number">${high}</span></div><div class="stat-card">🟠 Medium<br><span class="stat-number">${medium}</span></div><div class="stat-card">🟢 Low<br><span class="stat-number">${low}</span></div></div>
+      <div class="card"><h3>📊 Risk Analysis</h3><canvas id="pieChart" height="180"></canvas></div>
+      <div class="card"><h3>📊 Zone-wise Risk</h3><canvas id="barChart" height="180"></canvas></div>
+      <div class="card"><h3>🏭 Location Risk Status</h3><table><thead><tr><th>Location</th><th>Compliance</th><th>Risk</th></tr></thead><tbody>${deptHtml||'<tr><td colspan="3">No data</td>'}</tbody></table></div>
+      <div class="card"><h3>📋 Recent Audits</h3><table><thead><tr><th>ID</th><th>Location</th><th>Date</th><th>Score</th><th>Risk</th></tr></thead><tbody>${recentList||'<tr><td colspan="5">No audits</td>'}</tbody></table></div>
+      <div class="card"><h3>⚠️ Critical Alerts</h3>${high>0?'<div style="background:#e74c3c; padding:15px; border-radius:16px;">🚨 RED ALERT: High risk areas detected. Immediate action required!</div>':'<div style="background:#27ae60; padding:15px; border-radius:16px;">✅ All zones within acceptable limits</div>'}</div>`;
+  }
+
+  function renderAuditForm(container) {
+    let formHtml = `<div class="page-header"><h1>🧾 New Fire Safety Audit</h1></div>
+    <div class="card"><div class="form-row">
+      <div class="form-group"><label>👤 Auditor Name:</label><input type="text" id="auditorName" placeholder="Full Name" required></div>
+      <div class="form-group"><label>📌 Designation:</label><input type="text" id="designation" placeholder="Safety Officer"></div>
+      <div class="form-group"><label>📍 Location:</label><select id="locationSelect"><option value="">Select</option>${NINL_LOCATIONS.map(l=>`<option value="${l}">${l}</option>`).join('')}</select></div>
+      <div class="form-group" id="otherLocDiv" style="display:none;"><label>📍 Specify:</label><input type="text" id="otherLocation"></div>
+      <div class="form-group"><label>📅 Date:</label><input type="date" id="auditDate" value="${new Date().toISOString().slice(0,10)}"></div>
+    </div></div>`;
+    
+    let qCounter = 0;
+    let photoData = {};
+    let selectedStatus = new Array(100).fill('no');
+    
+    for(let s of sections) {
+      formHtml += `<div class="audit-section"><div class="section-title">${s.name}</div>`;
+      for(let q of s.questions) {
+        formHtml += `
+          <div class="audit-row" data-idx="${qCounter}">
+            <div class="question"><strong>${q}</strong></div>
+            <div class="options">
+              <label><input type="radio" name="status_${qCounter}" value="yes"> ✅ Yes</label>
+              <label><input type="radio" name="status_${qCounter}" value="no"> ❌ No</label>
+              <label><input type="radio" name="status_${qCounter}" value="na"> ⚪ N/A</label>
+            </div>
+            <div class="dynamic-fields" id="dynamicFields_${qCounter}" style="display:none;">
+              <textarea rows="2" placeholder="✏️ Reason / Observation (mandatory)" id="obs_${qCounter}"></textarea>
+              <textarea rows="2" placeholder="💡 Recommendation / Corrective Action" id="rec_${qCounter}"></textarea>
+            </div>
+            <div class="risk-level" id="riskLabel_${qCounter}">Pending</div>
+            <div class="photo-area">
+              <div class="photo-buttons">
+                <button type="button" class="camera-btn" data-idx="${qCounter}">📷 Camera</button>
+                <button type="button" class="file-btn" data-idx="${qCounter}">📁 File</button>
+              </div>
+              <input type="file" accept="image/*" id="photo_${qCounter}" style="display:none">
+              <div id="photoPreview_${qCounter}"></div>
+            </div>
+          </div>
+        `;
+        qCounter++;
+      }
+      formHtml += `</div>`;
+    }
+    formHtml += `<div class="card"><button id="submitAuditBtn" style="width:100%; padding:12px;">✅ Submit Audit Report</button></div>`;
+    container.innerHTML = formHtml;
+    
+    const total = qCounter;
+    
+    const locSelect = document.getElementById('locationSelect');
+    const otherDiv = document.getElementById('otherLocDiv');
+    if(locSelect) locSelect.onchange = () => { otherDiv.style.display = locSelect.value === 'Other' ? 'block' : 'none'; };
+    
+    function updateRisk() {
+      let resp = {};
+      for(let i=0;i<total;i++) resp[i]=selectedStatus[i];
+      let risk = computeRisk(resp);
+      for(let i=0;i<total;i++) {
+        let span = document.getElementById(`riskLabel_${i}`);
+        if(span) {
+          span.innerHTML = risk.riskLevel;
+          span.className = `risk-level ${risk.riskTag}`;
+        }
+      }
+      let old = document.getElementById('overallRiskPreview');
+      if(old) old.remove();
+      container.insertAdjacentHTML('beforeend', `<div id="overallRiskPreview" style="background:rgba(0,0,0,0.5); padding:12px; margin-top:12px; border-radius:16px;"><strong>Overall Risk:</strong> <span class="risk-badge ${risk.riskTag}">${risk.riskLevel}</span> (${risk.percent}%)</div>`);
+    }
+    
+    for(let i=0;i<total;i++) {
+      const radios = document.querySelectorAll(`input[name="status_${i}"]`);
+      radios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          selectedStatus[i] = e.target.value;
+          const dynamicDiv = document.getElementById(`dynamicFields_${i}`);
+          if(e.target.value === 'yes') {
+            dynamicDiv.style.display = 'none';
+          } else {
+            dynamicDiv.style.display = 'flex';
+          }
+          updateRisk();
+        });
+      });
+      
+      // Camera button handler
+      const cameraBtn = document.querySelector(`.camera-btn[data-idx="${i}"]`);
+      if(cameraBtn) {
+        cameraBtn.onclick = () => {
+          openCamera((imageData) => {
+            photoData[i] = imageData;
+            document.getElementById(`photoPreview_${i}`).innerHTML = `<img src="${imageData}" class="photo-preview" onclick="window.open(this.src)">`;
+          });
+        };
+      }
+      
+      // File upload handler
+      const fileBtn = document.querySelector(`.file-btn[data-idx="${i}"]`);
+      if(fileBtn) {
+        fileBtn.onclick = () => {
+          const input = document.getElementById(`photo_${i}`);
+          input.onchange = (e) => {
+            const file = e.target.files[0];
+            if(file) {
+              const reader = new FileReader();
+              reader.onload = ev => {
+                photoData[i] = ev.target.result;
+                document.getElementById(`photoPreview_${i}`).innerHTML = `<img src="${ev.target.result}" class="photo-preview" onclick="window.open(this.src)">`;
+              };
+              reader.readAsDataURL(file);
+            }
+          };
+          input.click();
+        };
+      }
+    }
+    
+    document.getElementById('submitAuditBtn').onclick = () => {
+      let auditor = document.getElementById('auditorName').value.trim();
+      let designation = document.getElementById('designation').value.trim();
+      let location = locSelect.value;
+      if(location === 'Other') location = document.getElementById('otherLocation').value.trim();
+      let date = document.getElementById('auditDate').value;
+      if(!auditor || !location) { alert("Please enter auditor name and location"); return; }
+      
+      let responses = {}, observations = {}, recommendations = {};
+      let isValid = true;
+      
+      for(let i=0;i<total;i++) {
+        responses[i] = selectedStatus[i];
+        if(selectedStatus[i] !== 'yes') {
+          let obs = document.getElementById(`obs_${i}`)?.value.trim();
+          if(!obs) { alert(`Please provide reason for item ${i+1}`); isValid = false; break; }
+          observations[i] = obs;
+          recommendations[i] = document.getElementById(`rec_${i}`)?.value.trim() || 'No recommendation provided';
+        }
+      }
+      if(!isValid) return;
+      
+      let risk = computeRisk(responses);
+      let audit = {
+        id: generateAuditId(),
+        date, inspector: `${auditor} (${designation || 'Safety Officer'})`,
+        department: location, responses, observations, recommendations, photos: photoData,
+        riskPercent: risk.percent, riskLevel: risk.riskLevel, riskTag: risk.riskTag,
+        timestamp: Date.now()
+      };
+      audits.unshift(audit);
+      localStorage.setItem('ninl_audits', JSON.stringify(audits));
+      alert(`✅ Audit Saved!\nID: ${audit.id}\nRisk: ${risk.riskLevel} (${risk.percent}%)`);
+      currentPage = 'reports';
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      document.querySelector('[data-page="reports"]').classList.add('active');
+      render();
+    };
+    updateRisk();
+  }
+
+  function printAuditReport(audit) {
+    let allRows = '';
+    let qc = 0;
+    for(let s of sections) {
+      for(let q of s.questions) {
+        let status = audit.responses[qc] || 'no';
+        let statusText = status === 'yes' ? '✅ Yes' : (status === 'no' ? '❌ No' : '⚪ N/A');
+        let reason = (status !== 'yes' && audit.observations && audit.observations[qc]) ? audit.observations[qc] : '—';
+        let recommendation = (status !== 'yes' && audit.recommendations && audit.recommendations[qc]) ? audit.recommendations[qc] : '—';
+        let photoHtml = (audit.photos && audit.photos[qc]) ? 
+          `<img src="${audit.photos[qc]}" style="width:120px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #f39c12;" />` : 
+          '<span style="color:#999;">No Photo</span>';
+        
+        allRows += `<tr><td style="padding:8px;"><strong>${s.name}</strong></td><td style="padding:8px;">${q}</td><td style="padding:8px; text-align:center">${statusText}</td><td style="padding:8px;">${reason}</td><td style="padding:8px;">${recommendation}</td><td style="padding:8px; text-align:center">${photoHtml}</tr>`;
+        qc++;
+      }
+    }
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>NINL Audit Report - ${audit.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { background: linear-gradient(135deg, #f39c12, #e74c3c); padding: 20px; text-align: center; color: white; }
+          .info { display: grid; grid-template-columns: repeat(2,1fr); gap: 15px; background: #f8f9fa; padding: 15px; margin: 15px 0; }
+          .risk-score { text-align: center; padding: 20px; margin: 15px; background: ${audit.riskLevel==='Critical Risk'?'#e74c3c':(audit.riskLevel==='Medium Risk'?'#f39c12':'#27ae60')}; color: white; border-radius: 10px; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+          th { background: #2c3e50; color: white; }
+          .footer { text-align: center; padding: 15px; background: #2c3e50; color: white; margin-top: 15px; }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header"><h1>Neelachal Ispat Nigam Limited</h1><p>Fire Safety Audit Report</p></div>
+        <div class="info"><div><strong>Audit ID:</strong> ${audit.id}</div><div><strong>Location:</strong> ${audit.department}</div><div><strong>Auditor:</strong> ${audit.inspector}</div><div><strong>Date:</strong> ${audit.date}</div></div>
+        <div class="risk-score"><h2>Compliance Score: ${audit.riskPercent}%</h2><h3>${audit.riskLevel}</h3></div>
+        <h3>Detailed Findings</h3>
+        <table><thead><tr><th>Section</th><th>Check Point</th><th>Status</th><th>Reason</th><th>Recommendation</th><th>Photo</th></tr></thead><tbody>${allRows}</tbody></table>
+        <div class="footer"><p>Authorized Signatory: ${audit.inspector} | NINL Safety Division</p></div>
+        <div class="no-print" style="text-align:center; margin-top:15px;"><button onclick="window.print()" style="padding:10px 30px;">🖨️ Print</button></div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  function renderReports(container) {
+    container.innerHTML = `
+      <div class="page-header"><h1>📄 Audit Reports</h1><div><button id="exportAllPdf">📎 Export Summary PDF</button></div></div>
+      <div class="search-filter"><input type="text" id="searchReports" placeholder="Search by ID, Location, Inspector" style="flex:2"><select id="riskFilter"><option value="all">All Risks</option><option value="Critical Risk">Critical</option><option value="Medium Risk">Medium</option><option value="Low Risk">Low</option></select></div>
+      <div id="reportsList"></div>
+    `;
+    
+    function renderList() {
+      let search = document.getElementById('searchReports')?.value.toLowerCase() || '';
+      let filterRisk = document.getElementById('riskFilter')?.value || 'all';
+      let filtered = audits.filter(a => (a.id.toLowerCase().includes(search) || a.department.toLowerCase().includes(search) || a.inspector.toLowerCase().includes(search)) && (filterRisk === 'all' || a.riskLevel === filterRisk));
+      
+      let itemsHtml = filtered.map(a => `
+        <div class="card" style="margin-bottom:12px; border-left:4px solid ${a.riskTag==='high-risk'?'#e74c3c':(a.riskTag==='medium-risk'?'#f39c12':'#27ae60')}">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div><strong>📋 ${a.id}</strong></div>
+            <div><strong>📍 ${a.department}</strong></div>
+            <div><strong>👤 ${a.inspector}</strong></div>
+            <div><strong>📅 ${a.date}</strong></div>
+            <div><span class="risk-badge ${a.riskTag}">${a.riskLevel} (${a.riskPercent}%)</span></div>
+            <div>
+              <button class="viewBtn" data-id="${a.id}" style="padding:5px 12px;">👁️ View</button>
+              <button class="printBtn" data-id="${a.id}" style="padding:5px 12px; background:#27ae60;">🖨️ Print</button>
+              <button class="pdfBtn" data-id="${a.id}" style="padding:5px 12px; background:#e74c3c;">📄 PDF</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('reportsList').innerHTML = itemsHtml || '<div class="card">No audit reports found</div>';
+      document.querySelectorAll('.viewBtn').forEach(btn => btn.onclick = () => viewAuditDetails(btn.dataset.id));
+      document.querySelectorAll('.printBtn').forEach(btn => btn.onclick = () => printAuditReport(audits.find(a => a.id === btn.dataset.id)));
+      document.querySelectorAll('.pdfBtn').forEach(btn => btn.onclick = () => generatePdfFromAudit(audits.find(a => a.id === btn.dataset.id)));
+    }
+    document.getElementById('searchReports').addEventListener('input', renderList);
+    document.getElementById('riskFilter').addEventListener('change', renderList);
+    document.getElementById('exportAllPdf').onclick = () => { const element = document.getElementById('reportsList').cloneNode(true); html2pdf().set({ margin: 0.5, filename: 'NINL_Audits_Summary.pdf' }).from(element).save(); };
+    renderList();
+  }
+  
+  function viewAuditDetails(id) {
+    let a = audits.find(x => x.id === id);
+    let msg = `📋 ${a.id}\n📍 ${a.department}\n👤 ${a.inspector}\n📅 ${a.date}\n🎯 Score: ${a.riskPercent}% (${a.riskLevel})\n📸 Photos: ${Object.keys(a.photos||{}).length}\n\n📝 Issues & Recommendations:\n`;
+    for(let key in a.observations) if(a.observations[key]) msg += `  • ${Number(key)+1}: ${a.observations[key]}\n    → Rec: ${a.recommendations[key] || 'N/A'}\n`;
+    alert(msg);
+  }
+  
+  function generatePdfFromAudit(audit) {
+    let allRows = '';
+    let qc = 0;
+    for(let s of sections) {
+      for(let q of s.questions) {
+        let status = audit.responses[qc] || 'no';
+        let statusText = status === 'yes' ? '✅ Yes' : (status === 'no' ? '❌ No' : '⚪ N/A');
+        let reason = (status !== 'yes' && audit.observations && audit.observations[qc]) ? audit.observations[qc] : '—';
+        let rec = (status !== 'yes' && audit.recommendations && audit.recommendations[qc]) ? audit.recommendations[qc] : '—';
+        let photoHtml = (audit.photos && audit.photos[qc]) ? `<img src="${audit.photos[qc]}" style="width:80px; height:65px; object-fit:cover;">` : '—';
+        allRows += `<tr><td>${s.name}<td>${q}<td style="text-align:center">${statusText}<td>${reason}<td>${rec}<td style="text-align:center">${photoHtml}</tr>`;
+        qc++;
+      }
+    }
+    const pdfHtml = `<html><head><title>NINL Audit ${audit.id}</title><style>body{font-family:Arial;padding:20px}.header{background:#f39c12;padding:20px;text-align:center;color:white}.info{margin:15px;padding:15px;background:#f8f9fa;display:grid;grid-template-columns:repeat(2,1fr)}.risk{background:${audit.riskLevel==='Critical Risk'?'#e74c3c':(audit.riskLevel==='Medium Risk'?'#f39c12':'#27ae60')};color:white;padding:20px;text-align:center;margin:15px}table{width:100%;border-collapse:collapse;margin:15px}th,td{border:1px solid #ddd;padding:8px;vertical-align:top}th{background:#2c3e50;color:white}</style></head><body><div class="header"><h1>NINL Fire Safety Audit</h1></div><div class="info"><div><strong>ID:</strong> ${audit.id}</div><div><strong>Location:</strong> ${audit.department}</div><div><strong>Auditor:</strong> ${audit.inspector}</div><div><strong>Date:</strong> ${audit.date}</div></div><div class="risk"><h2>Score: ${audit.riskPercent}%</h2><h3>${audit.riskLevel}</h3></div> <thead> <th>Section</th><th>Check Point</th><th>Status</th><th>Reason</th><th>Recommendation</th><th>Photo</th> </thead><tbody>${allRows}</tbody> </body></html>`;
+    const temp = document.createElement('div'); temp.style.position = 'absolute'; temp.style.left = '-9999px'; temp.innerHTML = pdfHtml; document.body.appendChild(temp);
+    html2pdf().set({ margin: 0.5, filename: `NINL_Audit_${audit.id}.pdf` }).from(temp).save().then(() => temp.remove());
+  }
+  
+  function renderRiskAnalytics(container) {
+    let heatMap = audits.map(a=> ({dept:a.department, risk:a.riskPercent})).slice(0,12);
+    let avgComp = audits.length ? Math.round(audits.reduce((s,a)=>s+a.riskPercent,0)/audits.length) : 100;
+    container.innerHTML = `<div class="card"><h3>🔥 NINL Risk Heat Map</h3><div>${heatMap.map(h=>`<span class="heat-cell ${h.risk<50?'red-bg':(h.risk<80?'orange-bg':'green-bg')}">📍 ${h.dept}: ${h.risk}%</span>`).join('')}</div></div>
+      <div class="card"><h3>📊 Overall Compliance: ${avgComp}%</h3><progress value="${avgComp}" max="100" style="width:100%; height:18px;"></progress><p><strong>🤖 Recommendation:</strong> ${avgComp<60?'🚨 URGENT: Immediate safety overhaul needed':(avgComp<85?'⚠️ IMPROVEMENT: Enhance training & inspections':'✅ MAINTAIN: Continue excellence')}</p></div>
+      <div class="card"><h3>🧑‍🚒 NINL Fire Safety Message</h3><div style="background:linear-gradient(135deg,#f39c12,#e74c3c); padding:20px; border-radius:16px; text-align:center;">"Every life matters - Safety is our top priority"<br>- NINL Fire Safety Division</div></div>`;
+  }
+  
+  function bindNav() {
+    document.querySelectorAll('.nav-item').forEach(nav => {
+      nav.addEventListener('click', () => { currentPage = nav.dataset.page; document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); nav.classList.add('active'); render(); });
+    });
+  }
+  window.addEventListener('DOMContentLoaded', () => { bindNav(); render(); });
+</script>
+</body>
+</html>
